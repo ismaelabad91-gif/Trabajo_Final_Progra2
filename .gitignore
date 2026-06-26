@@ -1,3 +1,14 @@
+# Ejecutables
 *.exe
+
+# Archivos objeto
 *.o
+
+# Archivos temporales
+*.out
+
+# Configuración de VS Code
 .vscode/
+
+# PDFs
+*.pdf
