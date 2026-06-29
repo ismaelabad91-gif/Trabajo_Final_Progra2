@@ -1,10 +1,10 @@
 ARTISTA,katseye
 DISCO,gabriela,23/12/2026
-CANCION,garly,katseye,30,mp3
-CANCION,pinki up,katseye,10,mp3
+CANCION,garly,katseye,30,sonido.mp3
+CANCION,pinki up,katseye,10,sonido.mp3
 ARTISTA,shakira
 DISCO,mundial,02/02/2026
-CANCION,dai dai,shakira,20,mp3
+CANCION,dai dai,shakira,20,sonido.mp3
 ARTISTA,peso pluma
 DISCO,noches,23/25/25
-CANCION,kenia os,peso pluma,40,mp3
+CANCION,kenia os,peso pluma,40,sonido.mp3

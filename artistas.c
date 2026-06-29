@@ -242,7 +242,11 @@ Cancion* crearCancion(char artista[], char nombre[], int duracionSegundos, char 
     strcpy(nueva->artista, artista);
     strcpy(nueva->nombre, nombre);
     nueva->duracionSegundos = duracionSegundos;
-    strcpy(nueva->archivoOrigen, archivoOrigen);
+    if (strlen(archivoOrigen) == 0 || strcmp(archivoOrigen, "mp3") == 0) {
+        strcpy(nueva->archivoOrigen, "sonido.mp3");
+    } else {
+        strcpy(nueva->archivoOrigen, archivoOrigen);
+    }
     nueva->reproducciones = 0;
     nueva->enPlaylists = 0;
     nueva->sig = NULL;
@@ -418,4 +422,84 @@ Cancion* buscarCancionSistema(Artista* raiz, char nombreArtista[], char nombreCa
 
 void mostrarTopCanciones(Artista* raiz) {
     printf(AMARILLO "Reporte de top canciones en desarrollo...\n" RESET);
+}
+
+void mostrarCancionesSistemaRec(Artista* raiz, int* contador) {
+    if (raiz == NULL) {
+        return;
+    }
+
+    mostrarCancionesSistemaRec(raiz->izq, contador);
+
+    Disco* disco = raiz->listaDiscos;
+    while (disco != NULL) {
+        Cancion* cancion = disco->listaCanciones;
+
+        while (cancion != NULL) {
+            printf(AMARILLO " %d. " RESET "%s " GRIS "- %s " CYAN "(%d seg)\n" RESET,
+                   *contador,
+                   cancion->nombre,
+                   cancion->artista,
+                   cancion->duracionSegundos);
+
+            printf(GRIS "     Archivo: %s\n" RESET, cancion->archivoOrigen);
+
+            (*contador)++;
+            cancion = cancion->sig;
+        }
+
+        disco = disco->sig;
+    }
+
+    mostrarCancionesSistemaRec(raiz->der, contador);
+}
+
+void mostrarCancionesSistema(Artista* raiz) {
+    int contador = 1;
+
+    if (raiz == NULL) {
+        printf(ROJO "\nNo hay canciones registradas en el sistema.\n" RESET);
+        return;
+    }
+
+    printf(MAGENTA "\n========== CANCIONES DISPONIBLES ==========\n" RESET);
+    mostrarCancionesSistemaRec(raiz, &contador);
+
+    if (contador == 1) {
+        printf(ROJO "\nNo hay canciones registradas en el sistema.\n" RESET);
+    }
+}
+
+Cancion* seleccionarCancionPorNumeroRec(Artista* raiz, int objetivo, int* contador) {
+    if (raiz == NULL) {
+        return NULL;
+    }
+
+    Cancion* encontrada = seleccionarCancionPorNumeroRec(raiz->izq, objetivo, contador);
+    if (encontrada != NULL) {
+        return encontrada;
+    }
+
+    Disco* disco = raiz->listaDiscos;
+    while (disco != NULL) {
+        Cancion* cancion = disco->listaCanciones;
+
+        while (cancion != NULL) {
+            if (*contador == objetivo) {
+                return cancion;
+            }
+
+            (*contador)++;
+            cancion = cancion->sig;
+        }
+
+        disco = disco->sig;
+    }
+
+    return seleccionarCancionPorNumeroRec(raiz->der, objetivo, contador);
+}
+
+Cancion* seleccionarCancionPorNumero(Artista* raiz, int objetivo) {
+    int contador = 1;
+    return seleccionarCancionPorNumeroRec(raiz, objetivo, &contador);
 }

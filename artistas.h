@@ -30,4 +30,7 @@ Cancion* buscarCancionSistema(Artista* raiz, char nombreArtista[], char nombreCa
 int agregarCancionSistema(Artista** raiz, char nombreArtista[], char nombreDisco[], char nombreCancion[], int duracion, char archivoOrigen[]);
 void mostrarTopCanciones(Artista* raiz);
 
+void mostrarCancionesSistema(Artista* raiz);
+Cancion* seleccionarCancionPorNumero(Artista* raiz, int objetivo);
+
 #endif

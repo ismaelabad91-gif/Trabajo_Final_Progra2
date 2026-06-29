@@ -861,87 +861,102 @@ void menuReportes(void) {
 }
 
 void reproducirMusica(Usuario* usuario) {
-    char nombreArtista[MAX_NOMBRE];
-    char nombreCancion[MAX_NOMBRE];
+    int opcionCancion;
     char mensajeError[256];
+    char comando[300];
     MCIERROR errorAudio;
-    
+
     limpiarPantalla();
     dibujarEncabezado("REPRODUCTOR DE MUSICA");
 
-    printf(CYAN "Nombre del artista: " RESET);
-    fgets(nombreArtista, sizeof(nombreArtista), stdin);
-    nombreArtista[strcspn(nombreArtista, "\n")] = '\0';
-    
-    printf(CYAN "Nombre de la cancion: " RESET);
-    fgets(nombreCancion, sizeof(nombreCancion), stdin);
-    nombreCancion[strcspn(nombreCancion, "\n")] = '\0';
-    
-    Cancion* cancion = buscarCancionSistema(raizArtistas, nombreArtista, nombreCancion);
-    
-    if (cancion != NULL) {
-        // ===================================================
-        // FASE 1: VERIFICAR Y REPRODUCIR ANUNCIO
-        // ===================================================
-        if (!usuario->premiumActivo) {
-            usuario->cancionesEscuchadasDesdeAnuncio++;
-            if (usuario->cancionesEscuchadasDesdeAnuncio >= 3) {
-                printf(MAGENTA "\n [!] ESPACIO PUBLICITARIO:\n" RESET);
-                mostrarAnuncioActual(colaAnuncios);
-                usuario->anunciosMostrados++;
-                usuario->cancionesEscuchadasDesdeAnuncio = 0;
-                
-                // --- AUDIO DEL ANUNCIO ---
-                mciSendString("close anuncio_alias", NULL, 0, NULL);
-                errorAudio = mciSendString("open anuncio.mp3 type mpegvideo alias anuncio_alias", NULL, 0, NULL);
-                
-                if (errorAudio != 0) {
-                    mciGetErrorString(errorAudio, mensajeError, 256);
-                    printf(ROJO "[DEBUG] Error con el anuncio: %s\n" RESET, mensajeError);
-                } else {
-                    mciSendString("play anuncio_alias", NULL, 0, NULL);
-                }
-                
-                printf(AMARILLO "\n(Escuchando anuncio... presiona Enter para saltar)\n" RESET);
-                pausa(); 
-                
-                // Apagar anuncio
-                mciSendString("close anuncio_alias", NULL, 0, NULL);
-            }
-        }
-        
-        // ===================================================
-        // FASE 2: REPRODUCIR LA CANCIÓN
-        // ===================================================
-        printf(VERDE "\n >> Reproduciendo: " RESET "%s " GRIS "por" RESET " %s\n", cancion->nombre, cancion->artista);
-        
-        // --- AUDIO DE LA CANCIÓN ---
-        mciSendString("close musica_alias", NULL, 0, NULL);
-        
-        // Usamos sonido.mp3 porque es el nombre exacto de tu archivo
-        errorAudio = mciSendString("open sonido.mp3 type mpegvideo alias musica_alias", NULL, 0, NULL);
-        
-        if (errorAudio != 0) {
-            mciGetErrorString(errorAudio, mensajeError, 256);
-            printf(ROJO "[DEBUG] Error con la musica: %s\n" RESET, mensajeError);
-        } else {
-            mciSendString("play musica_alias", NULL, 0, NULL);
-        }
-        
-        cancion->reproducciones++;
-        usuario->tiempoTotalReproduccion += cancion->duracionSegundos;
-        registrarEnHistorial(usuario, cancion);
-        
-        // El programa se detiene aquí mientras escuchas la canción
-        pausa(); 
-        
-        // Apagamos la música al presionar Enter
-        mciSendString("close musica_alias", NULL, 0, NULL);
-
-    } else {
-        printf(ROJO "Cancion no encontrada.\n" RESET);
+    if (raizArtistas == NULL) {
+        printf(ROJO "\nNo hay artistas ni canciones registradas.\n" RESET);
         pausa();
+        return;
     }
+
+    mostrarCancionesSistema(raizArtistas);
+
+    printf(CYAN "\nSeleccione el numero de la cancion: " RESET);
+    if (scanf("%d", &opcionCancion) != 1) {
+        limpiarBuffer();
+        printf(ROJO "\nOpcion invalida.\n" RESET);
+        pausa();
+        return;
+    }
+    limpiarBuffer();
+
+    Cancion* cancion = seleccionarCancionPorNumero(raizArtistas, opcionCancion);
+
+    if (cancion == NULL) {
+        printf(ROJO "\nCancion no encontrada.\n" RESET);
+        pausa();
+        return;
+    }
+
+    if (!usuario->premiumActivo) {
+        usuario->cancionesEscuchadasDesdeAnuncio++;
+
+        if (usuario->cancionesEscuchadasDesdeAnuncio >= 3) {
+            printf(MAGENTA "\n [!] ESPACIO PUBLICITARIO:\n" RESET);
+            mostrarAnuncioActual(colaAnuncios);
+
+            usuario->anunciosMostrados++;
+            usuario->cancionesEscuchadasDesdeAnuncio = 0;
+
+            mciSendString("close anuncio_alias", NULL, 0, NULL);
+            errorAudio = mciSendString("open \"anuncio.mp3\" type mpegvideo alias anuncio_alias", NULL, 0, NULL);
+
+            if (errorAudio != 0) {
+                mciGetErrorString(errorAudio, mensajeError, 256);
+                printf(ROJO "[DEBUG] Error con el anuncio: %s\n" RESET, mensajeError);
+            } else {
+                mciSendString("play anuncio_alias", NULL, 0, NULL);
+            }
+
+            printf(AMARILLO "\n(Escuchando anuncio. Presiona ENTER para continuar)\n" RESET);
+            pausa();
+
+            mciSendString("close anuncio_alias", NULL, 0, NULL);
+        }
+    }
+
+    printf(VERDE "\n >> Reproduciendo: " RESET "%s " GRIS "por" RESET " %s\n",
+           cancion->nombre,
+           cancion->artista);
+
+    printf(GRIS " Archivo de origen: %s\n" RESET, cancion->archivoOrigen);
+
+    mciSendString("close musica_alias", NULL, 0, NULL);
+
+    if (strlen(cancion->archivoOrigen) > 0) {
+        sprintf(comando, "open \"%s\" type mpegvideo alias musica_alias", cancion->archivoOrigen);
+    } else {
+        sprintf(comando, "open \"sonido.mp3\" type mpegvideo alias musica_alias");
+    }
+
+    errorAudio = mciSendString(comando, NULL, 0, NULL);
+
+    if (errorAudio != 0) {
+        mciGetErrorString(errorAudio, mensajeError, 256);
+        printf(ROJO "[DEBUG] Error con la musica: %s\n" RESET, mensajeError);
+        printf(AMARILLO "\nNo se pudo abrir el archivo, pero se registrara la reproduccion como simulada.\n" RESET);
+    } else {
+        mciSendString("play musica_alias", NULL, 0, NULL);
+    }
+
+    cancion->reproducciones++;
+    usuario->tiempoTotalReproduccion += cancion->duracionSegundos;
+    registrarEnHistorial(usuario, cancion);
+
+    printf(VERDE "\nReproduccion registrada correctamente.\n" RESET);
+    printf(GRIS "Reproducciones de esta cancion: %d\n" RESET, cancion->reproducciones);
+    printf(GRIS "Tiempo total del usuario: %d segundos\n" RESET, usuario->tiempoTotalReproduccion);
+
+    printf(AMARILLO "\nPresiona ENTER para detener/continuar...\n" RESET);
+    pausa();
+
+    mciSendString("close musica_alias", NULL, 0, NULL);
 }
 
 void comprarPremium(Usuario* usuario) {
