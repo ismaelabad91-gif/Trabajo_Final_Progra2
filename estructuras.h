@@ -1,6 +1,13 @@
 #ifndef ESTRUCTURAS_H
 #define ESTRUCTURAS_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+typedef struct Usuario Usuario;
+
 #define MAX_CORREO 80
 #define MAX_NOMBRE 80
 #define MAX_PAIS 50
@@ -12,101 +19,68 @@
 #define MAX_ANUNCIO 150
 #define MAX_ANUNCIANTE 80
 
-/* Declaraciones adelantadas */
-typedef struct Usuario Usuario;
-typedef struct Artista Artista;
-typedef struct Disco Disco;
-typedef struct Cancion Cancion;
-typedef struct Playlist Playlist;
-typedef struct NodoCancionPlaylist NodoCancionPlaylist;
-typedef struct NodoHistorial NodoHistorial;
-typedef struct NodoAmigo NodoAmigo;
-typedef struct Anuncio Anuncio;
-typedef struct ColaAnuncios ColaAnuncios;
+typedef struct {
+    int dia;
+    int mes;
+    int anio;
+} Fecha;
 
-/* =========================
-   CANCIONES
-   ========================= */
-
-struct Cancion {
+typedef struct Cancion {
     char artista[MAX_NOMBRE];
     char nombre[MAX_NOMBRE];
     int duracionSegundos;
     char archivoOrigen[MAX_ORIGEN];
-
     int reproducciones;
     int enPlaylists;
+    struct Cancion *sig;
+} Cancion;
 
-    Cancion *sig;
-};
-
-/* =========================
-   DISCOS
-   ========================= */
-
-struct Disco {
+typedef struct Disco {
     char nombre[MAX_NOMBRE];
     char fechaLanzamiento[MAX_FECHA];
-
     Cancion *listaCanciones;
+    struct Disco *sig;
+} Disco;
 
-    Disco *sig;
-};
-
-/* =========================
-   ARTISTAS - ABB
-   ========================= */
-
-struct Artista {
+typedef struct Artista {
     char nombre[MAX_NOMBRE];
-
     Disco *listaDiscos;
+    struct Artista *izq;
+    struct Artista *der;
+} Artista;
 
-    Artista *izq;
-    Artista *der;
-};
-
-/* =========================
-   PLAYLISTS
-   ========================= */
-
-struct NodoCancionPlaylist {
+typedef struct NodoCancionPlaylist {
     Cancion *cancion;
-    NodoCancionPlaylist *sig;
-};
+    struct NodoCancionPlaylist *sig;
+} NodoCancionPlaylist;
 
-struct Playlist {
+typedef struct Playlist {
     char nombre[MAX_NOMBRE];
-
     NodoCancionPlaylist *canciones;
+    struct Playlist *sig;
+} Playlist;
 
-    Playlist *sig;
-};
-
-/* =========================
-   HISTORIAL - PILA
-   ========================= */
-
-struct NodoHistorial {
+typedef struct NodoHistorial {
     Cancion *cancion;
     char fecha[MAX_FECHA];
+    struct NodoHistorial *sig;
+} NodoHistorial;
 
-    NodoHistorial *sig;
-};
-
-/* =========================
-   AMIGOS - LISTA LIGADA
-   ========================= */
-
-struct NodoAmigo {
+typedef struct NodoAmigo {
     Usuario *usuarioAmigo;
+    struct NodoAmigo *sig;
+} NodoAmigo;
 
-    NodoAmigo *sig;
-};
+typedef struct Anuncio {
+    char contenido[MAX_ANUNCIO];
+    char anunciante[MAX_ANUNCIANTE];
+    struct Anuncio *sig;
+} Anuncio;
 
-/* =========================
-   USUARIOS - ABB
-   ========================= */
+typedef struct ColaAnuncios {
+    Anuncio *frente;
+    Anuncio *final;
+} ColaAnuncios;
 
 struct Usuario {
     char correo[MAX_CORREO];
@@ -114,39 +88,18 @@ struct Usuario {
     char pais[MAX_PAIS];
     char nickname[MAX_NICKNAME];
     char contrasena[MAX_CONTRASENA];
-
     char plan[MAX_PLAN];
-
     int premiumActivo;
     char fechaVencimientoPremium[MAX_FECHA];
     float valorPremium;
-
     int cancionesEscuchadasDesdeAnuncio;
     int anunciosMostrados;
     int tiempoTotalReproduccion;
-
     Playlist *playlists;
     NodoHistorial *historial;
     NodoAmigo *amigos;
-
-    Usuario *izq;
-    Usuario *der;
-};
-
-/* =========================
-   ANUNCIOS - COLA
-   ========================= */
-
-struct Anuncio {
-    char contenido[MAX_ANUNCIO];
-    char anunciante[MAX_ANUNCIANTE];
-
-    Anuncio *sig;
-};
-
-struct ColaAnuncios {
-    Anuncio *frente;
-    Anuncio *final;
+    struct Usuario *izq;
+    struct Usuario *der;
 };
 
 #endif

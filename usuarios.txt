@@ -1,0 +1,6 @@
+ara,aracely,geomara.chuchuca@.com,ecuador,mis,premium,1
+Dev_Isma,Isma,isma@gmail.com,PERU,hola123,free,0
+Isma,Isma,ismael@gmail.com,Ecuador,hola123,premium,1
+arshy,shirley,shirley@u.com,italia,ara,premium,1
+papoi,paoi,jochuhchuca,ecu,mis,free,0
+mami,carmen,mamisisisis,roma,pipo,free,0
