@@ -574,8 +574,52 @@ void menuIngresar(void) {
     } while(opcion != 0);
 }
 
+int autenticarDesarrollador(void) {
+    char usuario[50];
+    char contrasena[50];
+    int intentos = 0;
+
+    while (intentos < 3) {
+        limpiarPantalla();
+        dibujarEncabezado("ACCESO MODO DESARROLLADOR");
+
+        printf(CYAN "Usuario: " RESET);
+        fgets(usuario, sizeof(usuario), stdin);
+        usuario[strcspn(usuario, "\n")] = '\0';
+
+        printf(CYAN "Contrasena: " RESET);
+        fgets(contrasena, sizeof(contrasena), stdin);
+        contrasena[strcspn(contrasena, "\n")] = '\0';
+
+        if (strcmp(usuario, "grupo1") == 0 && strcmp(contrasena, "Abad_Chuchuca") == 0) {
+            printf(VERDE "\n[OK] Acceso concedido.\n" RESET);
+            pausa();
+            return 1;
+        }
+
+        intentos++;
+
+        printf(ROJO "\n[!] Usuario o contrasena incorrectos.\n" RESET);
+
+        if (intentos < 3) {
+            printf(AMARILLO "Intentos restantes: %d\n" RESET, 3 - intentos);
+            pausa();
+        }
+    }
+
+    printf(ROJO "\n[!] Acceso denegado. Volviendo al menu principal.\n" RESET);
+    pausa();
+
+    return 0;
+}
+
 void menuDesarrollador(void) {
     int opcion;
+
+        if (!autenticarDesarrollador()) {
+        return;
+    }
+
     do {
         limpiarPantalla();
         dibujarEngranaje();
