@@ -99,10 +99,10 @@ int main() {
     guardarDatos(raizUsuarios, raizArtistas);
 
     printf(GRIS "\nLiberando memoria...\n" RESET);
-    liberarArtistas(raizArtistas);
+    liberarUsuarios(raizUsuarios);
     liberarPlaylists(playlists);
     liberarCola(colaAnuncios);
-    liberarUsuarios(raizUsuarios);
+    liberarArtistas(raizArtistas);
 
     printf(VERDE "Programa finalizado correctamente.\n" RESET);
     

@@ -12,5 +12,7 @@ void mostrarUsuarios(Usuario* raiz);
 Usuario* eliminarUsuario(Usuario* raiz, char nickname[]);
 void mostrarPlaylistsUsuario(Usuario* usuario);
 void liberarUsuarios(Usuario* raiz);
+void modificarUsuario(Usuario* usuario);
+int eliminarUsuarioSistema(Usuario** raizUsuarios, char nickname[]);
 
 #endif

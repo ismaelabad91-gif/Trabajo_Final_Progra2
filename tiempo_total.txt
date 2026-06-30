@@ -1,0 +1,26 @@
+--- REPORTE DE TIEMPO TOTAL DE REPRODUCCION ---
+
+Usuario: Isma (Dev_Isma)
+Tiempo total: 0 segundos
+Equivalente: 0 minutos y 0 segundos
+
+Usuario: Isma (Isma)
+Tiempo total: 0 segundos
+Equivalente: 0 minutos y 0 segundos
+
+Usuario: aracely (ara)
+Tiempo total: 0 segundos
+Equivalente: 0 minutos y 0 segundos
+
+Usuario: shirley (arshy)
+Tiempo total: 0 segundos
+Equivalente: 0 minutos y 0 segundos
+
+Usuario: carmen (mami)
+Tiempo total: 0 segundos
+Equivalente: 0 minutos y 0 segundos
+
+Usuario: paoi (papoi)
+Tiempo total: 20 segundos
+Equivalente: 0 minutos y 20 segundos
+

@@ -1,0 +1,8 @@
+--- REPORTE DE ARTISTAS PREFERIDOS POR USUARIO ---
+
+Usuario: Isma (Dev_Isma) -> Sin historial
+Usuario: Isma (Isma) -> Artista preferido: shakira (3 veces)
+Usuario: aracely (ara) -> Artista preferido: shakira (10 veces)
+Usuario: shirley (arshy) -> Artista preferido: shakira (3 veces)
+Usuario: carmen (mami) -> Artista preferido: shakira (4 veces)
+Usuario: paoi (papoi) -> Artista preferido: shakira (1 veces)

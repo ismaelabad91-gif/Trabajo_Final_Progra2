@@ -177,10 +177,209 @@ void reporteAnunciosFree(Usuario* usuario) {
     printf(" Reporte de anuncios generado.\n");
 }
 
+void agregarConteoArtista(NodoConteo** lista, char artista[]) {
+    NodoConteo* actual = *lista;
+
+    while (actual != NULL) {
+        if (strcmp(actual->artista, artista) == 0) {
+            actual->cantidad++;
+            return;
+        }
+        actual = actual->sig;
+    }
+
+    NodoConteo* nuevo = (NodoConteo*)malloc(sizeof(NodoConteo));
+
+    if (nuevo == NULL) {
+        return;
+    }
+
+    strcpy(nuevo->artista, artista);
+    nuevo->cantidad = 1;
+    nuevo->sig = *lista;
+    *lista = nuevo;
+}
+
+void liberarConteoArtistas(NodoConteo* lista) {
+    NodoConteo* temp;
+
+    while (lista != NULL) {
+        temp = lista;
+        lista = lista->sig;
+        free(temp);
+    }
+}
+
+void escribirArtistaPreferidoUsuario(FILE* archivo, Usuario* usuario) {
+    NodoHistorial* h;
+    NodoConteo* listaConteo = NULL;
+    NodoConteo* actual;
+    NodoConteo* mayor;
+
+    if (usuario == NULL) {
+        return;
+    }
+
+    if (usuario->historial == NULL) {
+        fprintf(archivo, "Usuario: %s (%s) -> Sin historial\n",
+                usuario->nombre,
+                usuario->nickname);
+        return;
+    }
+
+    h = usuario->historial;
+
+    while (h != NULL) {
+        if (h->cancion != NULL) {
+            agregarConteoArtista(&listaConteo, h->cancion->artista);
+        }
+        h = h->sig;
+    }
+
+    if (listaConteo == NULL) {
+        fprintf(archivo, "Usuario: %s (%s) -> Sin historial valido\n",
+                usuario->nombre,
+                usuario->nickname);
+        return;
+    }
+
+    mayor = listaConteo;
+    actual = listaConteo;
+
+    while (actual != NULL) {
+        if (actual->cantidad > mayor->cantidad) {
+            mayor = actual;
+        }
+        actual = actual->sig;
+    }
+
+    fprintf(archivo, "Usuario: %s (%s) -> Artista preferido: %s (%d veces)\n",
+            usuario->nombre,
+            usuario->nickname,
+            mayor->artista,
+            mayor->cantidad);
+
+    liberarConteoArtistas(listaConteo);
+}
+
+void reporteArtistasPreferidosTodosRec(Usuario* raiz, FILE* archivo) {
+    if (raiz == NULL) {
+        return;
+    }
+
+    reporteArtistasPreferidosTodosRec(raiz->izq, archivo);
+    escribirArtistaPreferidoUsuario(archivo, raiz);
+    reporteArtistasPreferidosTodosRec(raiz->der, archivo);
+}
+
+void reporteArtistasPreferidosTodos(Usuario* raizUsuarios) {
+    FILE* archivo = fopen("artistas_preferidos.txt", "w");
+
+    if (archivo == NULL) {
+        printf(ROJO "No se pudo crear artistas_preferidos.txt\n" RESET);
+        return;
+    }
+
+    fprintf(archivo, "--- REPORTE DE ARTISTAS PREFERIDOS POR USUARIO ---\n\n");
+
+    if (raizUsuarios == NULL) {
+        fprintf(archivo, "No hay usuarios registrados.\n");
+    } else {
+        reporteArtistasPreferidosTodosRec(raizUsuarios, archivo);
+    }
+
+    fclose(archivo);
+
+    printf(VERDE " [OK] Reporte generado: artistas_preferidos.txt\n" RESET);
+}
+
+void reporteTiempoTotalTodosRec(Usuario* raiz, FILE* archivo) {
+    int minutos;
+    int segundos;
+
+    if (raiz == NULL) {
+        return;
+    }
+
+    reporteTiempoTotalTodosRec(raiz->izq, archivo);
+
+    minutos = raiz->tiempoTotalReproduccion / 60;
+    segundos = raiz->tiempoTotalReproduccion % 60;
+
+    fprintf(archivo, "Usuario: %s (%s)\n", raiz->nombre, raiz->nickname);
+    fprintf(archivo, "Tiempo total: %d segundos\n", raiz->tiempoTotalReproduccion);
+    fprintf(archivo, "Equivalente: %d minutos y %d segundos\n\n", minutos, segundos);
+
+    reporteTiempoTotalTodosRec(raiz->der, archivo);
+}
+
+void reporteTiempoTotalTodos(Usuario* raizUsuarios) {
+    FILE* archivo = fopen("tiempo_total.txt", "w");
+
+    if (archivo == NULL) {
+        printf(ROJO "No se pudo crear tiempo_total.txt\n" RESET);
+        return;
+    }
+
+    fprintf(archivo, "--- REPORTE DE TIEMPO TOTAL DE REPRODUCCION ---\n\n");
+
+    if (raizUsuarios == NULL) {
+        fprintf(archivo, "No hay usuarios registrados.\n");
+    } else {
+        reporteTiempoTotalTodosRec(raizUsuarios, archivo);
+    }
+
+    fclose(archivo);
+
+    printf(VERDE " [OK] Reporte generado: tiempo_total.txt\n" RESET);
+}
+
+void reporteAnunciosFreeTodosRec(Usuario* raiz, FILE* archivo) {
+    if (raiz == NULL) {
+        return;
+    }
+
+    reporteAnunciosFreeTodosRec(raiz->izq, archivo);
+
+    if (strcmp(raiz->plan, "free") == 0 || raiz->premiumActivo == 0) {
+        fprintf(archivo, "Usuario: %s (%s)\n", raiz->nombre, raiz->nickname);
+        fprintf(archivo, "Plan: %s\n", raiz->plan);
+        fprintf(archivo, "Anuncios mostrados: %d\n\n", raiz->anunciosMostrados);
+    }
+
+    reporteAnunciosFreeTodosRec(raiz->der, archivo);
+}
+
+void reporteAnunciosFreeTodos(Usuario* raizUsuarios) {
+    FILE* archivo = fopen("reporte_anuncios.txt", "w");
+
+    if (archivo == NULL) {
+        printf(ROJO "No se pudo crear reporte_anuncios.txt\n" RESET);
+        return;
+    }
+
+    fprintf(archivo, "--- REPORTE DE ANUNCIOS MOSTRADOS A USUARIOS FREE ---\n\n");
+
+    if (raizUsuarios == NULL) {
+        fprintf(archivo, "No hay usuarios registrados.\n");
+    } else {
+        reporteAnunciosFreeTodosRec(raizUsuarios, archivo);
+    }
+
+    fclose(archivo);
+
+    printf(VERDE " [OK] Reporte generado: reporte_anuncios.txt\n" RESET);
+}
+
 void generarReportes(Usuario* raizUsuarios, Artista* raizArtistas) {
-    printf("\n=== GENERANDO TODOS LOS REPORTES ===\n");
+    printf(MAGENTA "\n========== GENERANDO REPORTES ==========\n" RESET);
+
     reporteTopCanciones(raizArtistas);
-    printf(" Todos los reportes generados exitosamente.\n");
+    reporteArtistasPreferidosTodos(raizUsuarios);
+    reporteTiempoTotalTodos(raizUsuarios);
+    reporteAnunciosFreeTodos(raizUsuarios);
+
+    printf(VERDE "\n [OK] Todos los reportes fueron generados correctamente.\n" RESET);
 }
 
 void mostrarUsuariosPremium(Usuario* raiz) {

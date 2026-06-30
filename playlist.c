@@ -15,23 +15,45 @@ Playlist* crearPlaylist(char nombre[]) {
 }
 
 void agregarCancionAPlaylist(Playlist* playlist, Cancion* cancion) {
-    if (playlist == NULL || cancion == NULL) return;
-    
-    NodoCancionPlaylist* nuevoNodo = (NodoCancionPlaylist*)malloc(sizeof(NodoCancionPlaylist));
-    if (nuevoNodo == NULL) return;
-    
+    NodoCancionPlaylist* actual;
+    NodoCancionPlaylist* nuevoNodo;
+
+    if (playlist == NULL || cancion == NULL) {
+        return;
+    }
+
+    actual = playlist->canciones;
+
+    while (actual != NULL) {
+        if (actual->cancion == cancion) {
+            printf(AMARILLO "\nLa cancion ya esta en esta playlist.\n" RESET);
+            return;
+        }
+
+        actual = actual->sig;
+    }
+
+    nuevoNodo = (NodoCancionPlaylist*)malloc(sizeof(NodoCancionPlaylist));
+
+    if (nuevoNodo == NULL) {
+        printf(ROJO "\nNo se pudo agregar la cancion a la playlist.\n" RESET);
+        return;
+    }
+
     nuevoNodo->cancion = cancion;
     nuevoNodo->sig = NULL;
-    
+
     cancion->enPlaylists++;
-    
+
     if (playlist->canciones == NULL) {
         playlist->canciones = nuevoNodo;
     } else {
-        NodoCancionPlaylist* actual = playlist->canciones;
+        actual = playlist->canciones;
+
         while (actual->sig != NULL) {
             actual = actual->sig;
         }
+
         actual->sig = nuevoNodo;
     }
 }
@@ -59,16 +81,27 @@ void mostrarPlaylist(Playlist* playlist) {
 }
 
 void liberarPlaylists(Playlist* playlist) {
+    Playlist* temp;
+    NodoCancionPlaylist* nodoActual;
+    NodoCancionPlaylist* tempNodo;
+
     while (playlist != NULL) {
-        Playlist* temp = playlist;
+        temp = playlist;
         playlist = playlist->sig;
-        
-        NodoCancionPlaylist* nodoActual = temp->canciones;
+
+        nodoActual = temp->canciones;
+
         while (nodoActual != NULL) {
-            NodoCancionPlaylist* tempNodo = nodoActual;
+            tempNodo = nodoActual;
+
+            if (tempNodo->cancion != NULL && tempNodo->cancion->enPlaylists > 0) {
+                tempNodo->cancion->enPlaylists--;
+            }
+
             nodoActual = nodoActual->sig;
             free(tempNodo);
         }
+
         free(temp);
     }
 }
@@ -107,13 +140,18 @@ int cancionEstaEnPlaylist(Playlist* playlists, char nombreCancion[], char artist
 }
 
 Playlist* eliminarPlaylist(Playlist* playlists, char nombre[]) {
+    Playlist* actual;
+    Playlist* anterior;
+    NodoCancionPlaylist* nodoActual;
+    NodoCancionPlaylist* temp;
+
     if (playlists == NULL) {
         printf(ROJO "No hay playlists para eliminar.\n" RESET);
         return NULL;
     }
 
-    Playlist* actual = playlists;
-    Playlist* anterior = NULL;
+    actual = playlists;
+    anterior = NULL;
 
     while (actual != NULL && strcmp(actual->nombre, nombre) != 0) {
         anterior = actual;
@@ -131,14 +169,21 @@ Playlist* eliminarPlaylist(Playlist* playlists, char nombre[]) {
         anterior->sig = actual->sig;
     }
 
-    NodoCancionPlaylist* nodoActual = actual->canciones;
+    nodoActual = actual->canciones;
+
     while (nodoActual != NULL) {
-        NodoCancionPlaylist* temp = nodoActual;
+        temp = nodoActual;
+
+        if (temp->cancion != NULL && temp->cancion->enPlaylists > 0) {
+            temp->cancion->enPlaylists--;
+        }
+
         nodoActual = nodoActual->sig;
         free(temp);
     }
 
     free(actual);
+
     printf(VERDE "Playlist eliminada.\n" RESET);
     return playlists;
 }

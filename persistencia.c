@@ -8,25 +8,56 @@
 #include <string.h>
 
 void guardarUsuariosRec(Usuario* raiz, FILE* f) {
-    if (raiz == NULL) return;
-    fprintf(f, "%s,%s,%s,%s,%s,%s,%d\n", raiz->nickname, raiz->nombre, raiz->correo, raiz->pais, raiz->contrasena, raiz->plan, raiz->premiumActivo);
+    if (raiz == NULL) {
+        return;
+    }
+
+    fprintf(f, "%s,%s,%s,%s,%s,%s,%d,%s,%.2f,%d,%d,%d\n",
+            raiz->nickname,
+            raiz->nombre,
+            raiz->correo,
+            raiz->pais,
+            raiz->contrasena,
+            raiz->plan,
+            raiz->premiumActivo,
+            raiz->fechaVencimientoPremium,
+            raiz->valorPremium,
+            raiz->cancionesEscuchadasDesdeAnuncio,
+            raiz->anunciosMostrados,
+            raiz->tiempoTotalReproduccion);
+
     guardarUsuariosRec(raiz->izq, f);
     guardarUsuariosRec(raiz->der, f);
 }
 
 void guardarArtistasRec(Artista* raiz, FILE* f) {
-    if (raiz == NULL) return;
+    if (raiz == NULL) {
+        return;
+    }
+
     fprintf(f, "ARTISTA,%s\n", raiz->nombre);
+
     Disco* d = raiz->listaDiscos;
-    while(d != NULL) {
+
+    while (d != NULL) {
         fprintf(f, "DISCO,%s,%s\n", d->nombre, d->fechaLanzamiento);
+
         Cancion* c = d->listaCanciones;
-        while(c != NULL) {
-            fprintf(f, "CANCION,%s,%s,%d,%s\n", c->nombre, c->artista, c->duracionSegundos, c->archivoOrigen);
+
+        while (c != NULL) {
+            fprintf(f, "CANCION,%s,%s,%d,%s,%d\n",
+                    c->nombre,
+                    c->artista,
+                    c->duracionSegundos,
+                    c->archivoOrigen,
+                    c->reproducciones);
+
             c = c->sig;
         }
+
         d = d->sig;
     }
+
     guardarArtistasRec(raiz->izq, f);
     guardarArtistasRec(raiz->der, f);
 }
@@ -93,19 +124,63 @@ void guardarDatos(Usuario* raizUsuarios, Artista* raizArtistas) {
 
 void cargarDatos(Usuario** raizUsuarios, Artista** raizArtistas) {
     FILE* fU = fopen("usuarios.txt", "r");
+
     if (fU != NULL) {
-        char linea[300];
-        while (fgets(linea, 300, fU) != NULL) {
+        char linea[400];
+
+        while (fgets(linea, 400, fU) != NULL) {
             Usuario* u = crearUsuarioVacio();
-            char* t = strtok(linea, ","); if(t) strcpy(u->nickname, t);
-            t = strtok(NULL, ","); if(t) strcpy(u->nombre, t);
-            t = strtok(NULL, ","); if(t) strcpy(u->correo, t);
-            t = strtok(NULL, ","); if(t) strcpy(u->pais, t);
-            t = strtok(NULL, ","); if(t) strcpy(u->contrasena, t);
-            t = strtok(NULL, ","); if(t) strcpy(u->plan, t);
-            t = strtok(NULL, "\n"); if(t) u->premiumActivo = atoi(t);
+
+            if (u == NULL) {
+                continue;
+            }
+
+            /* Valores por defecto por si el archivo viejo no tiene todos los campos */
+            strcpy(u->fechaVencimientoPremium, "");
+            u->valorPremium = 0.0;
+            u->cancionesEscuchadasDesdeAnuncio = 0;
+            u->anunciosMostrados = 0;
+            u->tiempoTotalReproduccion = 0;
+
+            char* t = strtok(linea, ",");
+            if (t) strcpy(u->nickname, t);
+
+            t = strtok(NULL, ",");
+            if (t) strcpy(u->nombre, t);
+
+            t = strtok(NULL, ",");
+            if (t) strcpy(u->correo, t);
+
+            t = strtok(NULL, ",");
+            if (t) strcpy(u->pais, t);
+
+            t = strtok(NULL, ",");
+            if (t) strcpy(u->contrasena, t);
+
+            t = strtok(NULL, ",");
+            if (t) strcpy(u->plan, t);
+
+            t = strtok(NULL, ",");
+            if (t) u->premiumActivo = atoi(t);
+
+            t = strtok(NULL, ",");
+            if (t) strcpy(u->fechaVencimientoPremium, t);
+
+            t = strtok(NULL, ",");
+            if (t) u->valorPremium = (float)atof(t);
+
+            t = strtok(NULL, ",");
+            if (t) u->cancionesEscuchadasDesdeAnuncio = atoi(t);
+
+            t = strtok(NULL, ",");
+            if (t) u->anunciosMostrados = atoi(t);
+
+            t = strtok(NULL, "\n");
+            if (t) u->tiempoTotalReproduccion = atoi(t);
+
             insertarUsuario(raizUsuarios, u);
         }
+
         fclose(fU);
     }
     
@@ -129,9 +204,24 @@ void cargarDatos(Usuario** raizUsuarios, Artista** raizArtistas) {
                 char* nombre = strtok(NULL, ",");
                 char* artista = strtok(NULL, ",");
                 char* dur = strtok(NULL, ",");
-                char* arch = strtok(NULL, "\n");
-                Cancion* c = crearCancion(artista, nombre, atoi(dur), arch);
-                agregarCancion(discoActual, c);
+                char* arch = strtok(NULL, ",");
+                char* reps = strtok(NULL, "\n");
+
+                if (nombre && artista && dur && arch) {
+                    arch[strcspn(arch, "\n")] = '\0';
+
+                    Cancion* c = crearCancion(artista, nombre, atoi(dur), arch);
+
+                    if (c != NULL) {
+                        if (reps != NULL) {
+                            c->reproducciones = atoi(reps);
+                        } else {
+                            c->reproducciones = 0;
+                        }
+
+                        agregarCancion(discoActual, c);
+                    }
+                }
             }
         }
         fclose(fA);

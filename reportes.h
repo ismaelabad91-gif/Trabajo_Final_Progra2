@@ -9,5 +9,8 @@ void reporteTiempoTotal(Usuario* usuario);
 void reporteAnunciosFree(Usuario* usuario);
 void generarReportes(Usuario* raizUsuarios, Artista* raizArtistas);
 void mostrarUsuariosPremium(Usuario* raiz);
+void reporteArtistasPreferidosTodos(Usuario* raizUsuarios);
+void reporteTiempoTotalTodos(Usuario* raizUsuarios);
+void reporteAnunciosFreeTodos(Usuario* raizUsuarios);
 
 #endif

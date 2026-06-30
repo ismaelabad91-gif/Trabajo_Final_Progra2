@@ -20,8 +20,8 @@ Cancion* crearCancion(char artista[], char nombre[], int duracionSegundos, char 
 void agregarCancion(Disco* disco, Cancion* nueva);
 Cancion* buscarCancion(Disco* disco, char nombre[]);
 void mostrarCanciones(Disco* disco);
-int eliminarCancionDeDisco(Disco* disco, char nombreCancion[], Playlist* playlists);
-void eliminarCancionDeSistema(Artista* raiz, char nombreArtista[], char nombreCancion[]);
+int eliminarCancionDeDisco(Disco* disco, char nombreCancion[]);
+int eliminarCancionDeSistema(Artista* raiz, char nombreArtista[], char nombreCancion[]);
 void liberarCanciones(Cancion* cancion);
 
 void mostrarTodosArtistasYDiscos(Artista* raiz);
@@ -32,5 +32,7 @@ void mostrarTopCanciones(Artista* raiz);
 
 void mostrarCancionesSistema(Artista* raiz);
 Cancion* seleccionarCancionPorNumero(Artista* raiz, int objetivo);
+void modificarCancionSistema(Artista* raiz, char nombreArtista[], char nombreCancion[]);
+int validarFecha(char fecha[]);
 
 #endif

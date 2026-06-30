@@ -4,6 +4,78 @@
 #include <stdlib.h>
 #include <string.h>
 #include "colores.h"
+#include "menus.h"
+
+int esBisiesto(int anio) {
+    if ((anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int validarFecha(char fecha[]) {
+    int dia;
+    int mes;
+    int anio;
+    int diasMes;
+
+    if (strlen(fecha) != 10) {
+        return 0;
+    }
+
+    if (fecha[2] != '/' || fecha[5] != '/') {
+        return 0;
+    }
+
+    if (sscanf(fecha, "%d/%d/%d", &dia, &mes, &anio) != 3) {
+        return 0;
+    }
+
+    if (anio < 1900 || anio > 2100) {
+        return 0;
+    }
+
+    if (mes < 1 || mes > 12) {
+        return 0;
+    }
+
+    switch (mes) {
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12:
+            diasMes = 31;
+            break;
+
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            diasMes = 30;
+            break;
+
+        case 2:
+            if (esBisiesto(anio)) {
+                diasMes = 29;
+            } else {
+                diasMes = 28;
+            }
+            break;
+
+        default:
+            return 0;
+    }
+
+    if (dia < 1 || dia > diasMes) {
+        return 0;
+    }
+
+    return 1;
+}
 
 extern Playlist* playlists;
 
@@ -317,50 +389,84 @@ void mostrarCanciones(Disco* disco) {
     }
 }
 
-int eliminarCancionDeDisco(Disco* disco, char nombreCancion[], Playlist* playlists) {
+int eliminarCancionDeDisco(Disco* disco, char nombreCancion[]) {
+    Cancion* actual;
+    Cancion* anterior;
+
     if (disco == NULL || disco->listaCanciones == NULL) {
-        printf(ROJO "Disco o lista de canciones vacia.\n" RESET);
         return 0;
     }
-    
-    if (cancionEstaEnPlaylist(playlists, nombreCancion, "")) {
-        printf(ROJO "No se puede eliminar la cancion porque esta en una playlist.\n" RESET);
-        return 0;
-    }
-    
-    Cancion* actual = disco->listaCanciones;
-    Cancion* anterior = NULL;
+
+    actual = disco->listaCanciones;
+    anterior = NULL;
+
     while (actual != NULL) {
         if (strcmp(actual->nombre, nombreCancion) == 0) {
+
+            if (actual->enPlaylists > 0) {
+                printf(ROJO "\nNo se puede eliminar la cancion '%s'.\n" RESET, actual->nombre);
+                printf(ROJO "La cancion pertenece a %d playlist(s).\n" RESET, actual->enPlaylists);
+                printf(AMARILLO "Primero debe eliminarse de las playlists.\n" RESET);
+
+                return -1; 
+            }
+
+            if (actual->reproducciones > 0) {
+                printf(ROJO "\nNo se puede eliminar la cancion '%s'.\n" RESET, actual->nombre);
+                printf(ROJO "La cancion ya tiene %d reproduccion(es).\n" RESET, actual->reproducciones);
+                printf(AMARILLO "Esta cancion ya forma parte del historial o de los reportes.\n" RESET);
+
+                return -1;
+            }
+
             if (anterior == NULL) {
                 disco->listaCanciones = actual->sig;
             } else {
                 anterior->sig = actual->sig;
             }
+
             free(actual);
-            printf(VERDE "Cancion '%s' eliminada exitosamente.\n" RESET, nombreCancion);
+            printf(VERDE "\nCancion '%s' eliminada exitosamente.\n" RESET, nombreCancion);
             return 1;
         }
+
         anterior = actual;
         actual = actual->sig;
     }
-    
-    printf(ROJO "Cancion '%s' no encontrada en el disco.\n" RESET, nombreCancion);
+
     return 0;
 }
 
-void eliminarCancionDeSistema(Artista* raiz, char nombreArtista[], char nombreCancion[]) {
-    Artista* artista = buscarArtista(raiz, nombreArtista);
-    if (artista != NULL) {
-        Disco* disco = artista->listaDiscos;
-        while (disco != NULL) {
-            if (eliminarCancionDeDisco(disco, nombreCancion, playlists)) {
-                return;
-            }
-            disco = disco->sig;
-        }
+int eliminarCancionDeSistema(Artista* raiz, char nombreArtista[], char nombreCancion[]) {
+    Artista* artista;
+    Disco* disco;
+    int resultado;
+
+    artista = buscarArtista(raiz, nombreArtista);
+
+    if (artista == NULL) {
+        printf(ROJO "\nArtista no encontrado.\n" RESET);
+        return 0;
     }
-    printf(ROJO "Cancion no encontrada en el sistema.\n" RESET);
+
+    disco = artista->listaDiscos;
+
+    while (disco != NULL) {
+        resultado = eliminarCancionDeDisco(disco, nombreCancion);
+
+        if (resultado == 1) {
+            return 1;
+        }
+
+        if (resultado == -1) {
+            return 0;
+        }
+
+        disco = disco->sig;
+    }
+
+    printf(ROJO "\nCancion no encontrada en el sistema.\n" RESET);
+    return 0;
 }
 
 void liberarCanciones(Cancion* cancion) {
@@ -418,6 +524,128 @@ Cancion* buscarCancionSistema(Artista* raiz, char nombreArtista[], char nombreCa
         disco = disco->sig;
     }
     return NULL;
+}
+
+void modificarCancionSistema(Artista* raiz, char nombreArtista[], char nombreCancion[]) {
+    Artista* artista;
+    Disco* disco;
+    Cancion* cancion;
+    Cancion* repetida;
+    int opcion;
+    int nuevaDuracion;
+    char nuevoNombre[MAX_NOMBRE];
+    char nuevoArchivo[MAX_ORIGEN];
+
+    artista = buscarArtista(raiz, nombreArtista);
+
+    if (artista == NULL) {
+        printf(ROJO "\n[!] Artista no encontrado.\n" RESET);
+        return;
+    }
+
+    disco = artista->listaDiscos;
+    cancion = NULL;
+
+    while (disco != NULL && cancion == NULL) {
+        cancion = buscarCancion(disco, nombreCancion);
+
+        if (cancion == NULL) {
+            disco = disco->sig;
+        }
+    }
+
+    if (cancion == NULL) {
+        printf(ROJO "\n[!] Cancion no encontrada.\n" RESET);
+        return;
+    }
+
+    do {
+        printf(CYAN "\n========== MODIFICAR CANCION ==========\n" RESET);
+        printf(AMARILLO "Cancion actual:\n" RESET);
+        printf(CYAN "  Artista:        " RESET "%s\n", cancion->artista);
+        printf(CYAN "  Nombre:         " RESET "%s\n", cancion->nombre);
+        printf(CYAN "  Duracion:       " RESET "%d segundos\n", cancion->duracionSegundos);
+        printf(CYAN "  Archivo origen: " RESET "%s\n", cancion->archivoOrigen);
+        printf(CYAN "  Reproducciones: " RESET "%d\n", cancion->reproducciones);
+        printf(CYAN "  En playlists:   " RESET "%d\n", cancion->enPlaylists);
+
+        printf("\n");
+        printf(BLANCO " 1. " AMARILLO "Modificar nombre\n" RESET);
+        printf(BLANCO " 2. " AMARILLO "Modificar duracion\n" RESET);
+        printf(BLANCO " 3. " AMARILLO "Modificar archivo de origen\n" RESET);
+        printf(BLANCO " 0. " ROJO "Volver\n" RESET);
+        printf(CYAN "\nOpcion: " RESET);
+
+        if (scanf("%d", &opcion) != 1) {
+            limpiarBuffer();
+            printf(ROJO "\nOpcion invalida.\n" RESET);
+            continue;
+        }
+
+        limpiarBuffer();
+
+        switch (opcion) {
+            case 1:
+                printf(CYAN "Nuevo nombre: " RESET);
+                fgets(nuevoNombre, sizeof(nuevoNombre), stdin);
+                nuevoNombre[strcspn(nuevoNombre, "\n")] = '\0';
+
+                if (strlen(nuevoNombre) == 0) {
+                    printf(ROJO "\n[!] El nombre no puede estar vacio.\n" RESET);
+                    break;
+                }
+
+                repetida = buscarCancion(disco, nuevoNombre);
+
+                if (repetida != NULL && repetida != cancion) {
+                    printf(ROJO "\n[!] Ya existe una cancion con ese nombre en este disco.\n" RESET);
+                } else {
+                    strcpy(cancion->nombre, nuevoNombre);
+                    printf(VERDE "\n[OK] Nombre actualizado.\n" RESET);
+                }
+                break;
+
+            case 2:
+                printf(CYAN "Nueva duracion en segundos: " RESET);
+
+                if (scanf("%d", &nuevaDuracion) != 1) {
+                    limpiarBuffer();
+                    printf(ROJO "\n[!] Duracion invalida.\n" RESET);
+                    break;
+                }
+
+                limpiarBuffer();
+
+                if (nuevaDuracion <= 0) {
+                    printf(ROJO "\n[!] La duracion debe ser mayor a 0.\n" RESET);
+                } else {
+                    cancion->duracionSegundos = nuevaDuracion;
+                    printf(VERDE "\n[OK] Duracion actualizada.\n" RESET);
+                }
+                break;
+
+            case 3:
+                printf(CYAN "Nuevo archivo de origen: " RESET);
+                fgets(nuevoArchivo, sizeof(nuevoArchivo), stdin);
+                nuevoArchivo[strcspn(nuevoArchivo, "\n")] = '\0';
+
+                if (strlen(nuevoArchivo) == 0) {
+                    printf(ROJO "\n[!] El archivo de origen no puede estar vacio.\n" RESET);
+                } else {
+                    strcpy(cancion->archivoOrigen, nuevoArchivo);
+                    printf(VERDE "\n[OK] Archivo de origen actualizado.\n" RESET);
+                }
+                break;
+
+            case 0:
+                printf(GRIS "\nVolviendo...\n" RESET);
+                break;
+
+            default:
+                printf(ROJO "\nOpcion invalida.\n" RESET);
+        }
+
+    } while (opcion != 0);
 }
 
 void mostrarTopCanciones(Artista* raiz) {
