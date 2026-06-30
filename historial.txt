@@ -1,6 +1,8 @@
 ara,2026-06-30,dai dai,shakira
-ara,2026-06-30,kenia os,peso pluma
-ara,2026-06-30,garly,katseye
 ara,2026-06-30,dai dai,shakira
-ara,2026-06-30,kenia os,peso pluma
-ara,2026-06-30,garly,katseye
+ara,2026-06-30,dai dai,shakira
+ara,2026-06-30,andrea,bad bunny
+ara,2026-06-30,billie jean,michael jackson
+ara,2026-06-30,smooth criminal,michael jackson
+ara,2026-06-30,dai dai,shakira
+ara,2026-06-30,waka waka,shakira

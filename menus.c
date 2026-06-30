@@ -380,7 +380,7 @@ void mostrarRecomendaciones(Usuario* usuario) {
     dibujarEncabezado("RECOMENDACIONES PARA TI");
     
     if (usuario->amigos == NULL) {
-        printf(AMARILLO " [!] Aún no tienes amigos.\n" RESET);
+        printf(AMARILLO " [!] Aun no tienes amigos.\n" RESET);
         printf(" Agrega amigos para ver que estan escuchando!\n");
         return;
     }
@@ -1169,6 +1169,94 @@ void menuReportes(void) {
     } while(opcion != 0);
 }
 
+////OJOOOOOOOOOO
+
+void reproducirAudioAnuncio(void) {
+    MCIERROR errorAudio;
+    char mensajeError[256];
+
+    mciSendString("close anuncio_alias", NULL, 0, NULL);
+
+    errorAudio = mciSendString("open \"anuncio.mp3\" type mpegvideo alias anuncio_alias", NULL, 0, NULL);
+
+    if (errorAudio != 0) {
+        mciGetErrorString(errorAudio, mensajeError, 256);
+        printf(ROJO "\n[DEBUG] No se pudo abrir anuncio.mp3: %s\n" RESET, mensajeError);
+        printf(AMARILLO "El anuncio se mostrara solo como texto.\n" RESET);
+
+        Sleep(3000);
+        return;
+    }
+
+    printf(AMARILLO "\nReproduciendo anuncio...\n" RESET);
+
+    errorAudio = mciSendString("play anuncio_alias wait", NULL, 0, NULL);
+
+    if (errorAudio != 0) {
+        mciGetErrorString(errorAudio, mensajeError, 256);
+        printf(ROJO "\n[DEBUG] Error al reproducir anuncio: %s\n" RESET, mensajeError);
+    }
+
+    mciSendString("close anuncio_alias", NULL, 0, NULL);
+}
+
+//ojooooooo
+int reproducirAudioCancion(Cancion* cancion) {
+    MCIERROR errorAudio;
+    char mensajeError[256];
+    char comando[400];
+    char rutaAbsoluta[MAX_PATH];
+    FILE* archivo;
+
+    if (cancion == NULL) {
+        return 0;
+    }
+
+    if (strlen(cancion->archivoOrigen) == 0) {
+        printf(ROJO "\n[!] Esta cancion no tiene archivo de origen.\n" RESET);
+        return 0;
+    }
+
+    GetFullPathNameA(cancion->archivoOrigen, MAX_PATH, rutaAbsoluta, NULL);
+
+    archivo = fopen(rutaAbsoluta, "rb");
+
+    if (archivo == NULL) {
+        printf(ROJO "\n[!] No se encontro el archivo de audio.\n" RESET);
+        printf(AMARILLO "Archivo guardado: %s\n" RESET, cancion->archivoOrigen);
+        printf(AMARILLO "Ruta buscada: %s\n" RESET, rutaAbsoluta);
+        return 0;
+    }
+
+    fclose(archivo);
+
+    mciSendString("close musica_alias", NULL, 0, NULL);
+
+    sprintf(comando, "open \"%s\" type mpegvideo alias musica_alias", rutaAbsoluta);
+
+    errorAudio = mciSendString(comando, NULL, 0, NULL);
+
+    if (errorAudio != 0) {
+        mciGetErrorString(errorAudio, mensajeError, 256);
+        printf(ROJO "\n[DEBUG] Error al abrir audio: %s\n" RESET, mensajeError);
+        return 0;
+    }
+
+    errorAudio = mciSendString("play musica_alias", NULL, 0, NULL);
+
+    if (errorAudio != 0) {
+        mciGetErrorString(errorAudio, mensajeError, 256);
+        printf(ROJO "\n[DEBUG] Error al reproducir audio: %s\n" RESET, mensajeError);
+        return 0;
+    }
+
+    return 1;
+}
+///////////////////////////
+
+
+
+
 void reproducirMusica(Usuario* usuario) {
     int opcionCancion;
     char mensajeError[256];
@@ -1213,20 +1301,12 @@ void reproducirMusica(Usuario* usuario) {
             usuario->anunciosMostrados++;
             usuario->cancionesEscuchadasDesdeAnuncio = 0;
 
-            mciSendString("close anuncio_alias", NULL, 0, NULL);
-            errorAudio = mciSendString("open \"anuncio.mp3\" type mpegvideo alias anuncio_alias", NULL, 0, NULL);
+            printf(AMARILLO "\nUsuario Free: debe escuchar un anuncio cada 3 canciones.\n" RESET);
 
-            if (errorAudio != 0) {
-                mciGetErrorString(errorAudio, mensajeError, 256);
-                printf(ROJO "[DEBUG] Error con el anuncio: %s\n" RESET, mensajeError);
-            } else {
-                mciSendString("play anuncio_alias", NULL, 0, NULL);
-            }
+            reproducirAudioAnuncio();
 
-            printf(AMARILLO "\n(Escuchando anuncio. Presiona ENTER para continuar)\n" RESET);
-            pausa();
-
-            mciSendString("close anuncio_alias", NULL, 0, NULL);
+            printf(VERDE "\nAnuncio finalizado. Continuando con la cancion...\n" RESET);
+            Sleep(1000);
         }
     }
 
@@ -1238,21 +1318,13 @@ void reproducirMusica(Usuario* usuario) {
 
     mciSendString("close musica_alias", NULL, 0, NULL);
 
-    if (strlen(cancion->archivoOrigen) > 0) {
-        sprintf(comando, "open \"%s\" type mpegvideo alias musica_alias", cancion->archivoOrigen);
-    } else {
-        sprintf(comando, "open \"sonido.mp3\" type mpegvideo alias musica_alias");
-    }
 
-    errorAudio = mciSendString(comando, NULL, 0, NULL);
-
-    if (errorAudio != 0) {
-        mciGetErrorString(errorAudio, mensajeError, 256);
-        printf(ROJO "[DEBUG] Error con la musica: %s\n" RESET, mensajeError);
-        printf(AMARILLO "\nNo se pudo abrir el archivo, pero se registrara la reproduccion como simulada.\n" RESET);
-    } else {
-        mciSendString("play musica_alias", NULL, 0, NULL);
+    if (!reproducirAudioCancion(cancion)) {
+        printf(AMARILLO "\nNo se pudo abrir el audio, pero se registrara la reproduccion como simulada.\n" RESET);
     }
+ 
+
+
 
     cancion->reproducciones++;
     usuario->tiempoTotalReproduccion += cancion->duracionSegundos;

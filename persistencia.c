@@ -183,33 +183,49 @@ void cargarDatos(Usuario** raizUsuarios, Artista** raizArtistas) {
 
         fclose(fU);
     }
-    
+
     FILE* fA = fopen("catalogo.txt", "r");
+
     if (fA != NULL) {
         char linea[300];
         Artista* artistaActual = NULL;
         Disco* discoActual = NULL;
+
         while (fgets(linea, 300, fA) != NULL) {
             char* tipo = strtok(linea, ",");
+
+            if (tipo == NULL) {
+                continue;
+            }
+
             if (strcmp(tipo, "ARTISTA") == 0) {
                 char* nombre = strtok(NULL, "\n");
-                artistaActual = crearArtista(nombre);
-                insertarArtista(raizArtistas, artistaActual);
-            } else if (strcmp(tipo, "DISCO") == 0 && artistaActual != NULL) {
+
+                if (nombre != NULL) {
+                    artistaActual = crearArtista(nombre);
+                    insertarArtista(raizArtistas, artistaActual);
+                    discoActual = NULL;
+                }
+            }
+
+            else if (strcmp(tipo, "DISCO") == 0 && artistaActual != NULL) {
                 char* nombre = strtok(NULL, ",");
                 char* fecha = strtok(NULL, "\n");
-                discoActual = crearDisco(nombre, fecha);
-                agregarDisco(artistaActual, discoActual);
-            } else if (strcmp(tipo, "CANCION") == 0 && discoActual != NULL) {
+
+                if (nombre != NULL && fecha != NULL) {
+                    discoActual = crearDisco(nombre, fecha);
+                    agregarDisco(artistaActual, discoActual);
+                }
+            }
+
+            else if (strcmp(tipo, "CANCION") == 0 && discoActual != NULL) {
                 char* nombre = strtok(NULL, ",");
                 char* artista = strtok(NULL, ",");
                 char* dur = strtok(NULL, ",");
                 char* arch = strtok(NULL, ",");
                 char* reps = strtok(NULL, "\n");
 
-                if (nombre && artista && dur && arch) {
-                    arch[strcspn(arch, "\n")] = '\0';
-
+                if (nombre != NULL && artista != NULL && dur != NULL && arch != NULL) {
                     Cancion* c = crearCancion(artista, nombre, atoi(dur), arch);
 
                     if (c != NULL) {
@@ -224,6 +240,7 @@ void cargarDatos(Usuario** raizUsuarios, Artista** raizArtistas) {
                 }
             }
         }
+
         fclose(fA);
     }
 
